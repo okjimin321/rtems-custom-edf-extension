@@ -107,10 +107,10 @@ rtems_task Init(
     directive_failed( status, "rtems_task_create" );
     status = rtems_task_start( id, Test_task, i );
     directive_failed( status, "rtems_task_start" );
-    
+
     /* Allow task to start before starting next task.
      * This is necessary on some simulators.
-     */ 
+     */
     while (TaskRan[i] == false)
       ;
   }
@@ -142,3 +142,23 @@ rtems_task Init(
 
   rtems_test_exit( 0 );    
 }
+
+
+
+/*
+ * RTEMS Application Configuration
+ */
+#define CONFIGURE_APPLICATION_NEEDS_CLOCK_DRIVER
+#define CONFIGURE_APPLICATION_NEEDS_CONSOLE_DRIVER
+
+#define CONFIGURE_MAXIMUM_TASKS          4
+
+#define CONFIGURE_RTEMS_INIT_TASKS_TABLE
+
+#define CONFIGURE_INIT_TASK_PRIORITY     100
+#define CONFIGURE_INIT_TASK_ATTRIBUTES   RTEMS_DEFAULT_ATTRIBUTES
+#define CONFIGURE_INIT_TASK_STACK_SIZE   RTEMS_MINIMUM_STACK_SIZE
+
+#include <rtems/confdefs.h>
+
+/* end of file */

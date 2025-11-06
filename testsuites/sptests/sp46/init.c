@@ -26,10 +26,13 @@
  * POSSIBILITY OF SUCH DAMAGE.
  */
 
+// 주기적인 태스크를 정확하게 스케줄링 하는지 테스트하는 코드.
+// rtems_rate_monotonic_period를 통해 deadline을 설정.
 #ifdef HAVE_CONFIG_H
 #include "config.h"
 #endif
 
+#include<stdio.h>
 #include <tmacros.h>
 #include <rtems/cpuuse.h>
 
@@ -62,19 +65,23 @@ rtems_task Periodic_Task(
   partial_loop = 0;
   while (1) {
     /* start period with initial value */
-    status = rtems_rate_monotonic_period( period_id, 25 );
-    directive_failed(status, "rate_monotonic_period");
+    status = rtems_rate_monotonic_period( period_id, 25 );// 주기를 인자로 주어 현재시간 + 주기를 deadline으로 설정함함
+    if(status == RTEMS_TIMEOUT){
+      printf("fail\n");
+      break;
+    }
+    //directive_failed(status, "rate_monotonic_period");
     partial_loop = 0;
 
     start = rtems_clock_get_ticks_since_boot();
     end   = start + 5;
-    while ( end <= rtems_clock_get_ticks_since_boot() )
+    while ( end <= rtems_clock_get_ticks_since_boot() )// 5tick 동안 점유대기.
       ;
 
     partial_loop = 1;
 
-    rtems_task_wake_after( 5 );
-  }
+    rtems_task_wake_after( 5 );// 5초 동안 block.
+  }// 총 10틱의 일을 한다.
 
   puts( "Periodic - Deleting self" );
   rtems_task_exit();
@@ -95,7 +102,7 @@ rtems_task Init(
 
 
   puts( "INIT - rtems_task_create - creating task 1" );
-  status = rtems_task_create(
+  status = rtems_task_create(// foreground task 생성,
     rtems_build_name( 'T', 'A', '1', ' ' ),
     1,
     RTEMS_MINIMUM_STACK_SIZE,
@@ -106,9 +113,10 @@ rtems_task Init(
   directive_failed( status, "rtems_task_create of TA1" );
 
   puts( "INIT - rtems_task_start - TA1 " );
-  status = rtems_task_start( task_id, Periodic_Task, 0 );
+  status = rtems_task_start( task_id, Periodic_Task, 0 );// 테스크 실행.
   directive_failed( status, "rtems_task_start of TA1" );
 
+  // TA1이 완료될 때까지 busy-waiting.
   while ( !partial_loop ) {
     status = rtems_task_wake_after( 2 );
     directive_failed( status, "rtems_task_wake_after" );

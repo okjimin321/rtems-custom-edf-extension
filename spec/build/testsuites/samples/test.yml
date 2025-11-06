@@ -1,0 +1,26 @@
+SPDX-License-Identifier: CC-BY-SA-4.0 OR BSD-2-Clause
+build-type: test-program
+cflags: []
+copyrights:
+- Copyright (C) 2021 On-Line Applications Research Corporation (OAR)
+cppflags: []
+cxxflags: []
+enabled-by: true
+features: c cprogram
+
+# include 할 header file 목록.
+includes:
+- cpukit/include
+
+ldflags: []
+links: [] # hello.yml처럼 우선 비워두는 것이 표준적인 접근입니다.
+
+# 컴파일 할 source file 목록.
+source:
+- testsuites/samples/test/init.c # 기존 hello.yml처럼 전체 경로를 명시합니다.
+- cpukit/score/src/edf_extension.c
+stlib: []
+target: testsuites/samples/test.exe # 생성될 실행 파일의 경로를 지정합니다.
+type: build
+use-after: []
+use-before: []

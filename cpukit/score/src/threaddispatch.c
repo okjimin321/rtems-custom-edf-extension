@@ -52,6 +52,15 @@
 #include <rtems/score/userextimpl.h>
 #include <rtems/config.h>
 
+// edf extension 추가.
+#include "rtems/edf_extension.h"
+#include <rtems.h>
+#include <rtems/score/thread.h>
+#include <stdlib.h>
+#include <rtems/edf_extension.h>
+#include <stdio.h>
+#include <rtems/rtems/clock.h> // 현재 시간을 가져오기 위해 추가.
+
 #if ( CPU_HARDWARE_FP == TRUE ) || ( CPU_SOFTWARE_FP == TRUE )
 Thread_Control *_Thread_Allocated_fp;
 #endif
@@ -298,7 +307,71 @@ void _Thread_Do_dispatch( Per_CPU_Control *cpu_self, ISR_Level level )
     const Thread_CPU_budget_operations *cpu_budget_operations;
 
     level = _Thread_Preemption_intervention( executing, cpu_self, level );
-    heir = _Thread_Get_heir_and_make_it_executing( cpu_self );
+
+
+
+
+
+    /*======================================================================================================*/
+  
+
+    heir = cpu_self->heir;
+    // 1. 현재 thread, next thread 정보 가져오기
+    rtems_tcb* cur_tcb =  (rtems_tcb*)executing; // 현재 실행 중인 thread.
+    rtems_tcb* next_tcb = (rtems_tcb*)heir;
+    rtems_id id = edf_extension_id;
+
+    uint64_t idx = rtems_object_id_get_index(id);
+    edf_thread_data* cur_data = cur_tcb->extensions[idx];
+    edf_thread_data* next_data = next_tcb->extensions[idx];
+    uint64_t cur_time = (uint64_t)rtems_clock_get_ticks_since_boot();
+
+    // 2. remain time 갱신.
+    if(cur_data && cur_data->isAdvanced){
+      uint64_t work_time = cur_time - cur_data->latest_scheduled_time;
+      if(cur_data->remain_time > work_time){
+        cur_data->remain_time -= work_time;
+      } else{
+        cur_data->remain_time = 0;
+      }
+    // ??
+      cur_data->latest_scheduled_time = cur_time;
+    }
+
+  // 3. boosting 여부 판단.
+    if((cur_data && next_data) && cur_data->isAdvanced && next_data->isAdvanced && cur_tcb != next_tcb){
+
+      uint64_t cur_fin_time = cur_time + cur_data->remain_time;
+
+      printf("=== Boosting Check ===\n");
+      printf("cur_time: %llu\n", cur_time);
+      printf("cur remain: %llu, next remain: %llu\n", 
+           cur_data->remain_time, next_data->remain_time);
+      printf("next least start time: %llu, cur finish time: %llu\n", 
+           next_data->dead_time - next_data->remain_time, cur_fin_time);
+      printf("cur deadline: %lld next deadline: %lld \n", cur_data->dead_time, next_data->dead_time);
+
+      // 100 is guard time(남은 시간이 0이면 boosting 하지 않음)
+      if(cur_data->remain_time != 0 && cur_fin_time < next_data->dead_time - next_data->remain_time - 100){
+        printf("Boosting!!\n");
+
+        // disptach 코드 종료를 알림.(원래는 _Thread_Get_heir_and_make_it_executing에서 설정함.)
+        cpu_self->dispatch_necessary = false;
+        break; // boosting
+      }
+    }
+    // boosting을 안 하면 next가 scheulde된 것이니까, next의 latest scheduled time을 현재 시간으로 설정.
+    if(next_data->isAdvanced)
+      next_data->latest_scheduled_time = cur_time;
+    /*======================================================================================================*/
+
+
+
+
+
+
+     // 이 함수 이전에 boosting 로직이 실행되어야 함.
+    heir = _Thread_Get_heir_and_make_it_executing( cpu_self );// 여기서 heir를 executing으로 설정해버림.
 
     /*
      * If the heir and executing are the same, then there is no need to do a

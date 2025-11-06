@@ -92,7 +92,7 @@ static void _Rate_monotonic_Release_postponed_job(
     &the_period->Priority,
     the_period->latest_deadline,
     &queue_context
-  );
+  );// postponed된 job을 home scheduler의 ready queue에 삽입한다.
 
   cpu_self = _Thread_Dispatch_disable_critical( lock_context );
   _Rate_monotonic_Release( the_period, lock_context );
@@ -291,6 +291,8 @@ static rtems_status_code _Rate_monotonic_Block_while_expired(
    * No matter the just finished jobs in time or not,
    * they are actually missing their deadlines already.
    */
+
+  //지금 작업을 완수했더라도 이미 deadline을 놓침.
   the_period->state = RATE_MONOTONIC_EXPIRED;
 
   /*
@@ -310,6 +312,7 @@ static rtems_status_code _Rate_monotonic_Block_while_expired(
   return RTEMS_TIMEOUT;
 }
 
+// Task의 새 작업주기를 시작하면 해당 함수를 호출하여, deadline과 지연된 작업들 처리리
 rtems_status_code rtems_rate_monotonic_period(
   rtems_id       id,
   rtems_interval length
@@ -336,14 +339,14 @@ rtems_status_code rtems_rate_monotonic_period(
 
   state = the_period->state;
 
-  if ( length == RTEMS_PERIOD_STATUS ) {
+  if ( length == RTEMS_PERIOD_STATUS ) {// 본 조건이 만족하면 단순히 state를 출력하며 작동
     status = _Rate_monotonic_Get_status_for_state( state );
     _Rate_monotonic_Release( the_period, &lock_context );
   } else {
     switch ( state ) {
-      case RATE_MONOTONIC_ACTIVE:
+      case RATE_MONOTONIC_ACTIVE:// 주기가 켜져있는 상태
 
-        if( the_period->postponed_jobs > 0 ){
+        if( the_period->postponed_jobs > 0 ){// 이전주기 중에 연기된 작업이 있는 상태
           /*
            * If the number of postponed jobs is not 0, it means the
            * previous postponed instance is finished without exceeding
@@ -363,6 +366,7 @@ rtems_status_code rtems_rate_monotonic_period(
            * Normal case that no postponed jobs and no expiration, so wait for
            * the period and update the deadline of watchdog accordingly.
            */
+           // 연기된 작업이 없는 상태(다음 주기까지 sleep함)
           status = _Rate_monotonic_Block_while_active(
             the_period,
             length,
@@ -371,15 +375,15 @@ rtems_status_code rtems_rate_monotonic_period(
           );
         }
         break;
-      case RATE_MONOTONIC_INACTIVE:
+      case RATE_MONOTONIC_INACTIVE:// 주기가 꺼진 상태
         status = _Rate_monotonic_Activate(
           the_period,
           length,
           executing,
           &lock_context
-        );
+        );// 주기를 설정하고 ready queue에 삽입하고 재시작.
         break;
-      default:
+      default:// 현재 작업이 주기를 놓친 상태
         /*
          * As now this period was already TIMEOUT, there must be at least one
          * postponed job recorded by the watchdog. The one which exceeded
@@ -394,7 +398,7 @@ rtems_status_code rtems_rate_monotonic_period(
           length,
           executing,
           &lock_context
-        );
+        );// 놓친 작업을 ready queue에 삽입
         break;
     }
   }

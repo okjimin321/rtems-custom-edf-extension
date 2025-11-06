@@ -1129,6 +1129,7 @@ source:
 - cpukit/score/src/schedulersimpleschedule.c
 - cpukit/score/src/schedulersimpleunblock.c
 - cpukit/score/src/schedulersimpleyield.c
+- cpukit/score/src/edf_extension.c
 - cpukit/score/src/semaphore.c
 - cpukit/score/src/stackallocator.c
 - cpukit/score/src/stackallocatorinit.c
