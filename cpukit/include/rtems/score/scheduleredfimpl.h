@@ -41,16 +41,6 @@
 #include <rtems/score/scheduleredf.h>
 #include <rtems/score/schedulerimpl.h>
 
-// edf extension 추가.
-#include "rtems/edf_extension.h"
-#include <rtems.h>
-#include <rtems/score/thread.h>
-#include <stdlib.h>
-#include <rtems/edf_extension.h>
-#include <stdio.h>
-#include <rtems/rtems/clock.h> // 현재 시간을 가져오기 위해 추가.
-
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -248,57 +238,6 @@ RTEMS_INLINE_ROUTINE void _Scheduler_EDF_Schedule_body(
   context = _Scheduler_EDF_Get_context( scheduler );
   first = _RBTree_Minimum( &context->Ready );
   node = RTEMS_CONTAINER_OF( first, Scheduler_EDF_Node, Node );
-
-  // // 1. 현재 thread, next thread 정보 가져오기
-  // rtems_tcb* cur_tcb =  (rtems_tcb*)the_thread; // 현재 실행 중인 thread.
-  // rtems_tcb* next_tcb = (rtems_tcb*)node->Base.owner; // 다음에 실행될 thread.
-  // rtems_id id = edf_extension_id;
-
-  // if(cur_tcb == next_tcb){
-  //   printf("cur and next are same\n");
-  // }
-  // uint64_t idx = rtems_object_id_get_index(id);
-  // edf_thread_data* cur_data = cur_tcb->extensions[idx];
-  // edf_thread_data* next_data = next_tcb->extensions[idx];
-  // uint64_t cur_time = (uint64_t)rtems_clock_get_ticks_since_boot();
-
-  // // 2. remain time 갱신.
-  // if(cur_data && cur_data->isAdvanced){
-  //   {
-  //     uint64_t work_time = cur_time - cur_data->latest_scheduled_time;
-  //     if(cur_data->remain_time > work_time){
-  //       cur_data->remain_time -= work_time;
-  //     } else{
-  //       cur_data->remain_time = 0;
-  //     }
-  //   }
-  //   // ??
-  //   cur_data->latest_scheduled_time = cur_time;
-  // }
-
-  // // 3. boosting 여부 판단.
-  // if(cur_data->isAdvanced && next_data->isAdvanced && cur_tcb != next_tcb){
-  //   uint64_t cur_fin_time = cur_time + cur_data->remain_time;
-
-  //   printf("=== Boosting Check ===\n");
-  //   printf("cur_time: %llu\n", cur_time);
-  //   printf("cur remain: %llu, next remain: %llu\n",
-  //          cur_data->remain_time, next_data->remain_time);
-  //   printf("next deadline: %llu, cur_fin_time: %llu\n",
-  //          next_data->dead_time, cur_fin_time);
-
-
-  //   if(cur_fin_time < next_data->dead_time - next_data->remain_time){
-  //     printf("cur_time: %lld \n", cur_time);
-  //     printf("Boosting!!\n");
-  //     return; // boosting
-  //   }
-  // }
-
-  // // boosting을 안 하면 next가 scheulde된 것이니까, next의 latest scheduled time을 현재 시간으로 설정.
-  // if(next_data->isAdvanced){
-  //   next_data->latest_scheduled_time = cur_time;
-  // }
 
   _Scheduler_Update_heir( node->Base.owner, force_dispatch );
   
