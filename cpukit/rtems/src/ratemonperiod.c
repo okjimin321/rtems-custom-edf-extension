@@ -45,6 +45,9 @@
 #include <rtems/score/schedulerimpl.h>
 #include <rtems/score/todimpl.h>
 
+// test를 위해 추가.
+#include <rtems/edf_extension.h>
+
 void _Rate_monotonic_Get_status(
   const Rate_monotonic_Control *the_period,
   Timestamp_Control            *wall_since_last_period,
@@ -250,6 +253,10 @@ static rtems_status_code _Rate_monotonic_Block_while_active(
    *  in the process of blocking on the period and that we
    *  may be changing the length of the next period.
    */
+
+  // Setting Edf extension to start new period.
+  edf_start_period((rtems_tcb*)executing, (uint64_t)length);
+
   the_period->next_length = length;
   executing->Wait.return_argument = the_period;
   _Thread_Wait_flags_set( executing, RATE_MONOTONIC_INTEND_TO_BLOCK );
@@ -312,7 +319,7 @@ static rtems_status_code _Rate_monotonic_Block_while_expired(
   return RTEMS_TIMEOUT;
 }
 
-// Task의 새 작업주기를 시작하면 해당 함수를 호출하여, deadline과 지연된 작업들 처리리
+// Task의 새 작업주기를 시작하면 해당 함수를 호출하여, deadline과 지연된 작업들 처리
 rtems_status_code rtems_rate_monotonic_period(
   rtems_id       id,
   rtems_interval length
@@ -366,7 +373,7 @@ rtems_status_code rtems_rate_monotonic_period(
            * Normal case that no postponed jobs and no expiration, so wait for
            * the period and update the deadline of watchdog accordingly.
            */
-           // 연기된 작업이 없는 상태(다음 주기까지 sleep함)
+           // 연기된 작업이 없는 상태(다음 주기까지 sleep함) 정상 종료 상태.
           status = _Rate_monotonic_Block_while_active(
             the_period,
             length,

@@ -14,6 +14,8 @@
 #include"/opt/rtems-6-sparc-gr712rc-smp-5/src/rtems/cpukit/include/rtems/edf_extension.h"
 const char rtems_test_name[] = "SP 46";
 
+bool test = 0;
+
 /* Tasks:
  * Task B has an earlier first deadline than Task A and appears at tick 1000.
  * Its default behavior is to preempt Task A when it becomes ready.
@@ -28,30 +30,42 @@ rtems_task Periodic_Task_B( rtems_task_argument argument )
   
   rtems_status_code  status;
   rtems_id           period_id;
-  rtems_interval     work_ticks = 500;
-  rtems_interval     period_ticks = 2200;
+  rtems_interval     work_ticks = 32;
+  rtems_interval     period_ticks = 100;
 
   // Add edf_extension(for boosting)
   rtems_tcb* cur = _Thread_Get_executing();
-  edf_set_execution_time(cur, work_ticks, period_ticks);
+  if(test)
+    edf_set_execution_time(cur, work_ticks, period_ticks + 10);
 
   puts( "Periodic B - Create Period" );
   status = rtems_rate_monotonic_create( rtems_build_name('H','I','G','H'), &period_id );
   directive_failed(status, "rate_monotonic_create");
-
+  
   int first = 1;
-  while (1) {
-
-    status = rtems_rate_monotonic_period( period_id, period_ticks );
-    //printf("Task B running... start Time: %u\n", rtems_clock_get_ticks_since_boot());
-    rtems_interval start = rtems_clock_get_ticks_since_boot();
-    rtems_interval end = start + work_ticks;
-    edf_start_period(cur, start + period_ticks);
-
+  for(int i = 0; i < 1600; i++) {
+    rtems_interval start;
+    rtems_interval end;
     if(first == 1){
-      // Wake up at tick 1000 and try to preempt Task A
-      rtems_task_wake_after(1000);
+      start = rtems_clock_get_ticks_since_boot();
+      end = start + work_ticks;
+
+      status = rtems_rate_monotonic_period( period_id, 110 );
+      //edf_start_period(cur, 110);
+      rtems_task_wake_after(10);
       first = 0;
+    }
+    else{
+      status = rtems_rate_monotonic_period( period_id, period_ticks );
+      //printf("Task B running... start Time: %u\n", rtems_clock_get_ticks_since_boot());
+      start = rtems_clock_get_ticks_since_boot();
+      end = start + work_ticks;
+
+      //edf_start_period(cur, start + period_ticks);
+      //printf("B start period: %d \n", start);
+    }
+    {
+      //rtems_task_wake_after(3);
     }
 
     if (status != RTEMS_SUCCESSFUL) {
@@ -64,31 +78,30 @@ rtems_task Periodic_Task_B( rtems_task_argument argument )
     while ( rtems_clock_get_ticks_since_boot() < end );
     //printf("Task B running... end Time: %u\n", rtems_clock_get_ticks_since_boot());
   }
+  printf("B ends \n");
 }
 
 rtems_task Periodic_Task_A( rtems_task_argument argument )
 {
   rtems_status_code  status;
   rtems_id           period_id;
-  rtems_interval     work_ticks = 1500;
-  rtems_interval     period_ticks = 2500;
+  rtems_interval     work_ticks = 30;
+  rtems_interval     period_ticks = 200;
 
   // Add edf_extension(for boosting)
   rtems_tcb* cur = _Thread_Get_executing();
-  edf_set_execution_time(cur, work_ticks, period_ticks);
+  if(test)
+    edf_set_execution_time(cur, work_ticks, period_ticks);
 
   puts( "Periodic A - Create Period" );
   status = rtems_rate_monotonic_create( rtems_build_name('L','O','W',' '), &period_id );
   directive_failed(status, "rate_monotonic_create");
 
-  while (1) {
+  for(int i = 0; i < 800; i++) {
 
     status = rtems_rate_monotonic_period( period_id, period_ticks );
-    //printf("Task A running... start Time: %u\n", rtems_clock_get_ticks_since_boot());
     rtems_interval start = rtems_clock_get_ticks_since_boot();
     rtems_interval end = start + work_ticks;
-
-    edf_start_period(cur, start + period_ticks);
 
     if (status != RTEMS_SUCCESSFUL) {
       if (status == RTEMS_TIMEOUT) {
@@ -98,8 +111,8 @@ rtems_task Periodic_Task_A( rtems_task_argument argument )
     }
 
     while ( rtems_clock_get_ticks_since_boot() < end );
-    //printf("Task A running... end Time: %u\n", rtems_clock_get_ticks_since_boot());
   }
+  printf("A ends \n");
 }
 
 
@@ -167,7 +180,7 @@ rtems_task Init( rtems_task_argument argument )
   directive_failed( status, "rtems_task_start of TA1(A)" );
 
   // After 10 seconds, Test terminates
-  rtems_task_wake_after( rtems_clock_get_ticks_per_second() * 10 );
+  rtems_task_wake_after( rtems_clock_get_ticks_per_second() * 5000 );
 
   TEST_END();
   rtems_test_exit( 0 );

@@ -66,7 +66,7 @@ void initialize_edf_extension(void){
 }
 
 // Initialize EDF parameters for a thread, enabling EDF-based scheduling
-void edf_set_execution_time(rtems_tcb* cur, uint64_t execution_t, uint64_t deadline){
+void edf_set_execution_time(rtems_tcb* cur, uint64_t execution_t, uint64_t period){
     uint64_t idx = rtems_object_id_get_index(edf_extension_id);
 
     edf_thread_data * cur_data = cur->extensions[idx];
@@ -77,15 +77,17 @@ void edf_set_execution_time(rtems_tcb* cur, uint64_t execution_t, uint64_t deadl
     cur_data->remain_time = execution_t;
     cur_data->latest_scheduled_time = 0;
 
-    cur_data->dead_time = deadline;
+    cur_data->dead_time = period;
 }
 
 // Reset execution and timing parameters for the new period
-void edf_start_period(rtems_tcb* cur, uint64_t deadline){
+void edf_start_period(rtems_tcb* cur, uint64_t period){
     uint64_t idx = rtems_object_id_get_index(edf_extension_id);
     edf_thread_data * cur_data = cur->extensions[idx];
 
+    if(!cur_data->isAdvanced)
+        return;
+
     cur_data->remain_time = cur_data->execution_time;
-    cur_data->dead_time = deadline;
-    cur_data->latest_scheduled_time = 0;
+    cur_data->dead_time += period;
 }
