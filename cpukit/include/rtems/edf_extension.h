@@ -22,10 +22,6 @@ typedef struct{
     uint64_t dead_time;             // Absolute deadline
 } edf_thread_data;
 
-
-//debug 
-void setUser(rtems_tcb* cur);
-
 void initialize_edf_extension(void); // Initialize the EDF scheduling extension
 
 bool edf_extension_create(rtems_tcb* executting, rtems_tcb* created); // Allocate EDF extension data to the newly created TCB

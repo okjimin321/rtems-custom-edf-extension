@@ -282,9 +282,6 @@ static void _Thread_Run_post_switch_actions( Thread_Control *executing )
   _Thread_State_release( executing, &lock_context );
 }
 
-//===================================
-// debug (for counting schedule count)
-int c = 0;  
 
 void _Thread_Do_dispatch( Per_CPU_Control *cpu_self, ISR_Level level )
 {
@@ -326,13 +323,6 @@ void _Thread_Do_dispatch( Per_CPU_Control *cpu_self, ISR_Level level )
 
     // 2. Update currenst task's remain time
     if(cur_data && cur_data->isAdvanced && cur_tcb->current_state != STATES_WAITING_FOR_PERIOD){
-      // test
-      // printf("===========================================================\n");
-      // printf("cur time: %lld \n", cur_time);
-      // printf("cur_lastest scheduled time: %lld \n", cur_data->latest_scheduled_time);
-      // printf("cur remain_time: %lld \n", cur_data->remain_time);
-      // printf("============================================================\n");
-
       uint64_t work_time = cur_time - cur_data->latest_scheduled_time;
 
       if(cur_data->remain_time > work_time){
@@ -346,16 +336,6 @@ void _Thread_Do_dispatch( Per_CPU_Control *cpu_self, ISR_Level level )
   // 3. Check if boosting is required
     if(cur_tcb->current_state != STATES_WAITING_FOR_PERIOD && (cur_data && next_data) && cur_data->isAdvanced && next_data->isAdvanced && cur_tcb != next_tcb){
 
-      // // test 
-      // printf("=======================================\n");
-      // printf("cur_time: %lld \n", cur_time);
-      // printf("cur remain_time %lld, ", cur_data->remain_time);
-      // printf("cur deadline: %lld \n", cur_data->dead_time);
-      // printf("next remain_time %lld, ", next_data->remain_time);
-      // printf("next deadline %lld \n", next_data->dead_time);
-      // printf("=======================================\n");
-
-
       uint64_t cur_fin_time = cur_time + cur_data->remain_time;
 
       // Boosting when next task's Least scheduled time is after current task's finish time(100 is guard time)
@@ -364,7 +344,6 @@ void _Thread_Do_dispatch( Per_CPU_Control *cpu_self, ISR_Level level )
       if(isBoost){
         // Set no need to dispatch to exit while loop(Originally, setting in _Thread_Get_heir_and_make_it_executing())
         cpu_self->dispatch_necessary = false;
-        printf("boosting\n");
         break; // BOOSTING
       }
     }
@@ -374,12 +353,6 @@ void _Thread_Do_dispatch( Per_CPU_Control *cpu_self, ISR_Level level )
     if(next_data && next_data->isAdvanced){
       next_data->latest_scheduled_time = cur_time;
 
-      // test 
-      // printf("-------------dddd--------------------------------------\n");
-      // printf("time: %lld \n", cur_time);
-      // printf("next remain time: %lld \n", next_data->remain_time);
-      // printf("next deadline: %lld \n", next_data->dead_time);
-      // printf("-------------------------------------------------------\n");
     }
     /*======================================================================================================*/
 
@@ -411,8 +384,6 @@ void _Thread_Do_dispatch( Per_CPU_Control *cpu_self, ISR_Level level )
 #if !defined(RTEMS_SMP)
     _User_extensions_Thread_switch( executing, heir );
 #endif
-    //=================
-    printf("count: %d \n", ++c);
     _Thread_Save_fp( executing );
     _Context_Switch( &executing->Registers, &heir->Registers );
     _Thread_Restore_fp( executing );

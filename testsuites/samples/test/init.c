@@ -14,7 +14,7 @@
 #include"/opt/rtems-6-sparc-gr712rc-smp-5/src/rtems/cpukit/include/rtems/edf_extension.h"
 const char rtems_test_name[] = "SP 46";
 
-bool test = 0;
+bool test = 1;
 
 /* Tasks:
  * Task B has an earlier first deadline than Task A and appears at tick 1000.
@@ -193,7 +193,7 @@ rtems_task Init( rtems_task_argument argument )
 #define CONFIGURE_MAXIMUM_PERIODS         2
 #define CONFIGURE_MAXIMUM_USER_EXTENSIONS 6 // For adding edf_extension
 #define CONFIGURE_SCHEDULER_EDF
-#define CONFIGURE_SCHEDULER_NAME_EDE_U = rtems_build_name('U', 'E', 'D', 'F')
+
 #define CONFIGURE_INIT_TASK_ATTRIBUTES RTEMS_DEFAULT_MODES
 #define CONFIGURE_RTEMS_INIT_TASKS_TABLE
 #define CONFIGURE_INIT
