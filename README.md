@@ -71,9 +71,7 @@ Temporal Boosting은 다음 조건을 만족할 때만 허용된다.
 - Guard Time (실험적으로 설정된 안전 여유 시간)
 
 ```
-$$
-T_{cur} + R_{cur} < D_{next} - R_{next} - G
-$$
+`T_cur + R_cur < D_next - R_next - G`
 ```
 
  그렇기 때문에 Guard Time은 예외 상황으로 인한 deadline miss를 방지하기 위해 도입되었다.
