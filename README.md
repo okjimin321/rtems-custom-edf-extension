@@ -198,3 +198,7 @@ EDF 스케줄러의 구조적 한계를 완화할 수 있음을 실험적으로 
 ## References
 
 논문 참고문헌과 동일
+
+## Full Paper 
+
+([Full Paper](<RTEMS Temporal Boosting Scheduler.pdf>))
