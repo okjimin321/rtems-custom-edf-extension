@@ -12,3 +12,6 @@ Makefile.in
 /testsuites/build/build
 /testsuites/build/wscript
 .waf*
+/wscript
+/waf
+/rtemslogo.png
