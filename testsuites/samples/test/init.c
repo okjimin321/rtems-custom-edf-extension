@@ -169,7 +169,7 @@ rtems_task Init( rtems_task_argument argument )
   );
   directive_failed( status, "rtems_task_create of TA1" );
 
-  // Assign EDF scheduler for Task B
+  // Assign EDF scheduler for Task A
   puts( "INIT - rtems_task_set_scheduler - TA1 to EDF" );
   status = rtems_task_set_scheduler( task_id_A, edf_scheduler_id, 0);
   directive_failed( status, "rtems_task_set_scheduler of TA1" );
